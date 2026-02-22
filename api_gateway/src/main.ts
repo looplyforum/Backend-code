@@ -27,6 +27,28 @@ app.use(
 );
 // http://localhost:3000/auth -> redirect auth service 
 
+
+
+
+app.use(
+  "/notification",
+  createProxyMiddleware({
+    target: "http://notification:4000",
+    changeOrigin: true,
+    pathRewrite: { "^/notification": "" },
+  })
+);
+
+
+app.use(
+  "/upload",
+  createProxyMiddleware({
+    target: "http://upload:4000",
+    changeOrigin: true,
+    pathRewrite: { "^/upload": "" },
+  })
+);
+
 app.listen(3000, () => {
   console.log("API Gateway running on port 3000");
 });
