@@ -1,0 +1,34 @@
+name: "Linting and formatting on PR"
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service:
+          - api_gateway
+          - auth_service
+          - notification_service
+          - upload_service
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.service }}
+        run: npm install
+
+      - name: Run ESLint
+        working-directory: ${{ matrix.service }}
+        run: npm run lint

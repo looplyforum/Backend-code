@@ -14,12 +14,39 @@ services:
       - "4001:4000"
     depends_on:
       - postgres
+    networks:
+      - default
 
   api_gateway:
     build: ./api_gateway
     ports:
-      - "3001:3000"
+      - "3000:3000"
     depends_on:
+      - postgres
       - auth
-  
-   
+      - notification
+      - upload
+    networks:
+      - default
+
+  notification:
+    build: ./notification_service
+    ports:
+      - "4002:4000"
+    depends_on:
+      - postgres
+    networks:
+      - default
+  upload:
+    build: ./upload_service
+    ports:
+      - "4003:4000"
+    depends_on:
+      - postgres
+    networks:
+      - default
+
+
+networks:
+  default:
+    driver: bridge
