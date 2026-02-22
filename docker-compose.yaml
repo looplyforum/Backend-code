@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: looply
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: looply
+    ports:
+      - "5432:5432"
+
+  auth:
+    build: ./auth_service
+    ports:
+      - "4001:4000"
+    depends_on:
+      - postgres
+
+  api_gateway:
+    build: ./api_gateway
+    ports:
+      - "3001:3000"
+    depends_on:
+      - auth
+  
+   
