@@ -123,6 +123,7 @@ const LogOutUser = AsyncHandler(async (req, res, next) => {
 
 
 const UpdateUserProfile = AsyncHandler(async (req, res) => {
+    //User can update their profile information like name, email, phone number and set profile picture once they are logged in.
 });
 
 
@@ -135,6 +136,7 @@ const UpdateProfilePicture = AsyncHandler(async (req, res) => {
 
 
 const DeleteUser = AsyncHandler(async (req, res) => {
+    //Is this going to be permanent delete or soft delete?
 });
 
 
