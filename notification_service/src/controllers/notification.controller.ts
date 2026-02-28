@@ -20,6 +20,10 @@ const verificationEmail = AsyncHandler(async (req, res) => {
   );
 });
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> feature_branch
 const logInAlert = AsyncHandler(async (req, res) => {
     const {otp, email} = req.body;
     try {
