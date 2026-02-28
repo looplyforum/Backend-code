@@ -10,11 +10,42 @@ import axios from "axios";
 // logical layer of auth service
 const GenerateToken = (userId: number) => {
     try {
+<<<<<<< HEAD
         return JWT.sign(
             { id: userId },
             process.env.JWT_SECRET as string,
             { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
         );
+=======
+        const user = await prisma.user.findUnique({
+            where: {
+                id: UserId
+            }
+        });
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+        const accessToken = JWT.sign(
+            { id: user.id },
+            process.env.ACCESS_TOKEN_SECRET as string,
+            { expiresIn: "1d" }
+        );
+        const refreshToken = JWT.sign(
+            { id: user.id },
+            process.env.REFRESH_TOKEN_SECRET as string,
+            { expiresIn: "7d" }
+        );
+        await prisma.user.update({
+            where: {
+                id: user.id
+            },
+            data: {
+                refreshToken
+            }
+        });
+
+        return { accessToken, refreshToken };
+>>>>>>> 7a3bf30 (WIP: saving changes in auth serivce)
     } catch (error) {
         throw new ApiError(500, "Error generating token");
     }
