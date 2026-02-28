@@ -4,6 +4,7 @@ import ApiResponse from '../utils/ApiResponse';
 import { prisma } from '../libs/prisma';
 import bcrypt from "bcrypt";
 import JWT from "jsonwebtoken";
+import axios from "axios";
 
 
 // logical layer of auth service
@@ -104,6 +105,10 @@ const LoginUser = AsyncHandler(async (req, res, next) => {
     }
 });
 
+const LoginUser = AsyncHandler(async (req, res) => {
+    try {
+        const { email, phone, password } = req.body;
+
 
 const LogOutUser = AsyncHandler(async (req, res, next) => {
     try {
@@ -121,34 +126,145 @@ const LogOutUser = AsyncHandler(async (req, res, next) => {
     }
 });
 
+const VerifyUser = AsyncHandler(async (req, res) => {
+    try {
+        const { token } = req.query;
+        const userId = req.user.id;
+        console.log(token);
 
 const UpdateUserProfile = AsyncHandler(async (req, res) => {
     //User can update their profile information like name, email, phone number and set profile picture once they are logged in.
 });
 
+const LogOutUser = AsyncHandler(async (req, res) => {
+    try {
+
+        const userId = req;
+        console.log(userId);
+
+        await prisma.user.update({
+            where: { id: req.user.id },
+            data: { refreshToken: null }
+        });
+
+        res.clearCookie("accessToken", options);
+        res.clearCookie("refreshToken", options);
+
+        return res.status(200).json(
+            new ApiResponse(200, {}, "Logged out successfully")
+        );
+    } catch (error) {
+        if (error instanceof ApiError) {
+            return res.status(error.statusCode).json(error)
+        }
+    }
+});
+
+const UpdateUserProfile = AsyncHandler(async (req, res) => {
+    const data = req.body;
+    const userId = req.user.id;
+    try {
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data
+        });
+        return res.status(200).json(
+            new ApiResponse(200, user, "User updated successfully")
+        );
+
+    } catch (error) {
+        if (error instanceof ApiError) {
+            return res.status(error.statusCode).json(error)
+        }
+    }
+});
 
 const ForgotPassword = AsyncHandler(async (req, res) => {
-});
-
-
-const UpdateProfilePicture = AsyncHandler(async (req, res) => {
-});
-
+    try {
+        const { email, password } = req.body;
+        // send email with otp 
+        // then change password
 
 const DeleteUser = AsyncHandler(async (req, res) => {
     //Is this going to be permanent delete or soft delete?
 });
 
+const UpdateProfilePicture = AsyncHandler(async (req, res) => {
+    try {
+        const profilePicture = req.file;
+        console.log(profilePicture);
+        // store locally and update in db
 
-const VerifyUser = AsyncHandler(async (req, res) => {
+    } catch (error) {
+        if (error instanceof ApiError) {
+            return res.status(error.statusCode).json(error)
+        }
+    }
 });
 
+const DeleteUser = AsyncHandler(async (req, res) => {
+    try {
+        const userId = req.user.id;
 
+        await prisma.user.update({
+            where: { id: userId },
+            data: { isDeleted: true }
+        });
+
+        return res.status(200).json(
+            new ApiResponse(200, {}, "Your account has been deleted")
+        );
+    } catch (error) {
+        if (error instanceof ApiError) {
+            return res.status(error.statusCode).json(error)
+        }
+    }
+});
+
+const GetUser = AsyncHandler(async (req, res) => {
+    try {
+        const userId = req.user.id;
+        console.log(req);
+
+        const user = await prisma.user.findFirst({
+            where: { id: Number(userId) },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                profilePicture: true,
+                collegeName: true,
+                yearOfJoining: true,
+                yearOfPassing: true,
+                dateOfBirth: true,
+                fieldOfInterest: true,
+                fieldOfStudy: true,
+                username: true,
+                studentId: true,
+                phone: true
+            }
+        });
+        return res.status(200).json(new ApiResponse(200, user, "User Fetched Successfully"))
+
+    } catch (error) {
+        if (error instanceof ApiError) {
+            return res.status(error.statusCode).json(error);
+        }
+    }
+});
+
+// TODO 
 const LoginWithGoogle = AsyncHandler(async (req, res) => {
+    try {
+        return res.status(200).json(new ApiResponse(200, "Login With Google Is Under Development"))
+
+    } catch (error) {
+        if (error instanceof ApiError) {
+            return res.status(error.statusCode).json(error)
+        }
+    }
 });
-
-
-
 
 export {
     RegisterUser,
@@ -159,5 +275,6 @@ export {
     UpdateProfilePicture,
     DeleteUser,
     LoginWithGoogle,
-    VerifyUser
+    VerifyUser,
+    GetUser,
 };

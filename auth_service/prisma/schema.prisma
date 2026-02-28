@@ -8,25 +8,22 @@ generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
 }
-
 datasource db {
   provider = "postgresql"
 }
-
-
 
 
 model User {
   id                     Int       @id @default(autoincrement())
 
   profilePicture         String?
-  firstName              String
+  firstName              String?
   lastName               String?
   email                  String    @unique
   username               String?
   studentId              String?
   phone                  String    @unique
-  dateOfBirth            DateTime?
+  dateOfBirth            DateTime? //yyyy-mm-dd
 
   password               String
 
@@ -38,8 +35,8 @@ model User {
   yearOfPassing          Int?
 
   isVerified             Boolean   @default(false)
-  verificationToken      String?
-  verificationTokenExpiry DateTime?
+  accessToken            String?
+  refreshToken           String?
 
   isDeleted              Boolean   @default(false)
 
