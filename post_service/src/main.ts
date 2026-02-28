@@ -27,13 +27,8 @@ app.use(
 );
 
 
-
-
-
-
-
-
 app.use('/application',ApplicationRoute)
+
 app.use("/", postRoute)
 
 
