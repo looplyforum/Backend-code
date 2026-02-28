@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Post {
+  id              Int      @id @default(autoincrement())
+  slug            String   @unique
+  title           String
+  content         String
+  authorId        Int
+  fieldofInterest String[]
+
+  applicants Applicant[]
+  teamSize   TeamSize    @default(FOUR)
+
+  isPublished Boolean
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Applicant {
+  id     Int @id @default(autoincrement())
+  postId Int
+  userId Int // application id
+
+  // based on whatsapp question 
+  motivation            String // What impressed you to join
+  contribution          String // What you bring to the table
+  learningGoals         String // What you want to learn
+  weeklyCommitmentHours Int // Hours per week
+  longTermInterest      Boolean // Willing for long term?
+
+  applicationStatus ApplicationStatus @default(PENDING)
+
+  post Post @relation(fields: [postId], references: [id])
+
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([postId, userId])
+}
+
+enum TeamSize {
+  ONE
+  TWO
+  THREE
+  FOUR
+  FIVE
+  SIX
+  SEVEN
+  EIGHT
+  NINE
+  TEN
+  TEN_PLUS
+}
+
+enum ApplicationStatus {
+  PENDING // expressed interest, awaiting review
+  UNDER_REVIEW // owner is reviewing
+  APPROVED // accepted into the idea
+  REJECTED // not selected
+  WITHDRAWN // applicant pulled out
+}
+
+// model Comments {
+//   id       Int    @id @default(autoincrement())
+//   content  String
+//   authorId Int
+
+//   postId Int
+//   post   Post @relation(fields: [postId], references: [id])
+
+//   applicantId Int?
+//   applicant   Applicant? @relation(fields: [applicantId], references: [id])
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
