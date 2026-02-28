@@ -19,14 +19,19 @@
     "express-rate-limit": "^8.2.1",
     "helmet": "^8.1.0",
     "http-proxy-middleware": "^3.0.5",
+    "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/node": "^25.2.3",
+    "@types/swagger-jsdoc": "^6.0.4",
     "eslint": "^10.0.1",
     "globals": "^17.3.0",
     "jiti": "^2.6.1",

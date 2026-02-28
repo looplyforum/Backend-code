@@ -14,7 +14,7 @@ jobs:
           - api_gateway
           - auth_service
           - notification_service
-          - upload_service
+          - post_service
 
     steps:
       - name: Checkout repo

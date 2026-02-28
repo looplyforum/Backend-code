@@ -1,10 +1,11 @@
 services:
   postgres:
-    image: postgres:15
+    image: postgres:latest
     environment:
       POSTGRES_USER: looply
       POSTGRES_PASSWORD: password
       POSTGRES_DB: looply
+  
     ports:
       - "5432:5432"
 
@@ -14,9 +15,11 @@ services:
       - "4001:4000"
     depends_on:
       - postgres
+    env_file:
+      - ./auth_service/.env
     networks:
       - default
-
+      
   api_gateway:
     build: ./api_gateway
     ports:
@@ -24,8 +27,8 @@ services:
     depends_on:
       - postgres
       - auth
-      - notification
-      - upload
+    env_file:
+      - ./api_gateway/.env
     networks:
       - default
 
@@ -35,14 +38,21 @@ services:
       - "4002:4000"
     depends_on:
       - postgres
+    env_file:
+      - ./notification_service/.env
     networks:
       - default
-  upload:
-    build: ./upload_service
+
+  posts:
+    build: ./post_service
     ports:
-      - "4003:4000"
+      - "4004:4000"
     depends_on:
       - postgres
+      - auth
+      - api_gateway
+    env_file:
+      -  ./post_service/.env
     networks:
       - default
 

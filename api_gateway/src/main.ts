@@ -1,11 +1,16 @@
 import express from "express"
 import cors from "cors"
 import morgan from "morgan"
+import { config } from "dotenv"
 import { createProxyMiddleware } from "http-proxy-middleware"
+import { verifyToken } from "./utils/middleware"
 
 const app = express();
 
 // Security middleware
+config({
+  path: "./.env",
+});
 
 app.use(cors());
 app.use(morgan("dev"));
@@ -15,8 +20,9 @@ app.get("/", (req, res) => {
   res.send("Welcome to the Looply API Gateway!");
 });
 
-
 // Proxy configuration for services
+
+// http://localhost:3000/auth
 app.use(
   "/auth",
   createProxyMiddleware({
@@ -25,10 +31,6 @@ app.use(
     pathRewrite: { "^/auth": "" },
   })
 );
-// http://localhost:3000/auth -> redirect auth service 
-
-
-
 
 app.use(
   "/notification",
@@ -39,15 +41,17 @@ app.use(
   })
 );
 
-
+// verify every request with token 
 app.use(
-  "/upload",
+  "/posts",
+  verifyToken,
   createProxyMiddleware({
-    target: "http://upload:4000",
+    target: "http://posts:4000",
     changeOrigin: true,
-    pathRewrite: { "^/upload": "" },
+    pathRewrite: { "^/posts": "" },
   })
 );
+
 
 app.listen(3000, () => {
   console.log("API Gateway running on port 3000");

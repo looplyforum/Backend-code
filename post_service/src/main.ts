@@ -1,13 +1,16 @@
 import express from "express"
 import cors from "cors"
 import morgan from "morgan"
-import {config} from "dotenv"
-import notificationRoute from "./routes/notification.route"
+import { config } from "dotenv"
 import rateLimit from "express-rate-limit"
+import postRoute from "./routes/post.route"
+import ApplicationRoute from "./routes/application.route"
+
 
 config({
-    path: "./.env"
+  path: "./.env"
 });
+
 
 const PORT = process.env.PORT || 4000
 const app = express()
@@ -23,15 +26,17 @@ app.use(
   })
 );
 
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" })
-})
-
-
-app.use("/" , notificationRoute)
 
 
 
-app.listen(PORT,  () => {
-  console.log(`Notification service is running on port ${PORT}`)
+
+
+
+
+app.use('/application',ApplicationRoute)
+app.use("/", postRoute)
+
+
+app.listen(PORT, () => {
+  console.log(`Post service is running on port ${PORT}`)
 })
