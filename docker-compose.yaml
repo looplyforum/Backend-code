@@ -19,6 +19,8 @@ services:
       - ./auth_service/.env
     networks:
       - default
+    volumes:
+      - uploads:/app/uploads
       
   api_gateway:
     build: ./api_gateway
@@ -60,3 +62,6 @@ services:
 networks:
   default:
     driver: bridge
+
+volumes:
+  uploads:

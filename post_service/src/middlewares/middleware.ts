@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import AsyncHandler from "./AsyncHandler";
+import AsyncHandler from "../utils/AsyncHandler";
 
 
 

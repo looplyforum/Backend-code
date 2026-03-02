@@ -60,8 +60,6 @@ const GenerateVerificationLink = (id: number) => {
     return `${process.env.BASE_URL}/auth/verify-user?token=${verificationToken}`;
 };
 
-
-
 const RegisterUser = AsyncHandler(async (req, res) => {
     try {
         const { email, phone, password, fieldOfStudy, fieldOfInterest, dateOfBirth } = req.body;
@@ -115,6 +113,7 @@ const RegisterUser = AsyncHandler(async (req, res) => {
 });
 
 const LoginUser = AsyncHandler(async (req, res) => {
+
     try {
         const { email, phone, password } = req.body;
 
@@ -227,7 +226,6 @@ const LogOutUser = AsyncHandler(async (req, res) => {
     }
 });
 
-
 const UpdateUserProfile = AsyncHandler(async (req, res) => {
     const data = req.body
     const userId = req.user.id;
@@ -246,7 +244,6 @@ const UpdateUserProfile = AsyncHandler(async (req, res) => {
     }
 });
 
-
 const ForgotPassword = AsyncHandler(async (req, res) => {
     const userId = req.user.id;
     try {
@@ -260,20 +257,34 @@ const ForgotPassword = AsyncHandler(async (req, res) => {
     }
 });
 
-
 const UpdateProfilePicture = AsyncHandler(async (req, res) => {
-    try {
-        const profilePicture = req.file;
-        console.log(profilePicture);
+    const userId = req.user.id;
+    const profilePicture = req.file;
 
-        // TODO
+    try {
+        if (!profilePicture) {
+            return res.status(400).json(
+                new ApiResponse(400, null, "Profile picture is required")
+            );
+        }
+
+        const imageUrl = profilePicture.path;
+
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: { profilePicture: imageUrl }
+        });
+        return res.status(200).json(
+            new ApiResponse(200, user.profilePicture, "Profile picture updated successfully")
+        );
     } catch (error) {
         if (error instanceof ApiError) {
-            return res.status(error.statusCode).json(error)
+            return res.status(error.statusCode).json(
+                new ApiResponse(error.statusCode, null, error.message)
+            )
         }
     }
 });
-
 
 const DeleteUser = AsyncHandler(async (req, res) => {
     try {
@@ -294,14 +305,12 @@ const DeleteUser = AsyncHandler(async (req, res) => {
     }
 });
 
-
 const GetUser = AsyncHandler(async (req, res) => {
     try {
         const userId = req.user.id;
-        const user = prisma.user.findFirst({
+        const user = await prisma.user.findFirst({
             where: { id: Number(userId) }
-
-        })
+        });
         return res.status(200).json(new ApiResponse(200, user, "User Fetched Successfully"))
 
     } catch (error) {
@@ -310,7 +319,6 @@ const GetUser = AsyncHandler(async (req, res) => {
         }
     }
 });
-
 
 const LoginWithGoogle = AsyncHandler(async (req, res) => {
     try {
