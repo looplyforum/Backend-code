@@ -9,37 +9,40 @@ services:
     ports:
       - "5432:5432"
 
-  auth:
-    build: ./auth_service
-    ports:
-      - "4001:4000"
-    depends_on:
-      - postgres
-    env_file:
-      - ./auth_service/.env
-    networks:
-      - default
-    volumes:
-      - uploads:/app/uploads
-      
   api_gateway:
     build: ./api_gateway
     ports:
       - "3000:3000"
     depends_on:
       - postgres
-      - auth
     env_file:
       - ./api_gateway/.env
     networks:
       - default
 
+  auth:
+    build: ./auth_service
+    ports:
+      - "4001:4000"
+    depends_on:
+      - postgres
+      - api_gateway
+    env_file:
+      - ./auth_service/.env
+    # environment:
+    #   DATABASE_URL: postgres://looply:password@postgres:5432/looply
+    networks:
+      - default
+    volumes:
+      - uploads:/app/uploads
+      
   notification:
     build: ./notification_service
     ports:
       - "4002:4000"
     depends_on:
       - postgres
+      - api_gateway
     env_file:
       - ./notification_service/.env
     networks:
@@ -51,7 +54,6 @@ services:
       - "4004:4000"
     depends_on:
       - postgres
-      - auth
       - api_gateway
     env_file:
       -  ./post_service/.env

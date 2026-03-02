@@ -3,12 +3,13 @@ import cors from "cors"
 import morgan from "morgan"
 import { config } from "dotenv"
 import { createProxyMiddleware } from "http-proxy-middleware"
-import { verifyToken } from "./utils/middleware"
 import cookieParser from "cookie-parser"
-
 import cluster from "node:cluster"
 import os from "node:os"
 import process from "node:process"
+
+
+import { verifyToken } from "./utils/middleware"
 
 const app = express();
 
@@ -21,8 +22,10 @@ app.use(morgan("dev"));
 app.use(cookieParser());
 
 
-app.get("/", (req, res) => {
-  res.send("Welcome to the Looply API Gateway!");
+
+
+app.get("/health", (_, res) => {
+  return res.status(200).json({ status: "ok" });
 });
 
 // Proxy configuration for services
@@ -43,6 +46,7 @@ app.use(
     target: "http://notification:4000",
     changeOrigin: true,
     pathRewrite: { "^/notification": "" },
+    logger: console,
   })
 );
 

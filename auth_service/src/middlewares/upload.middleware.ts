@@ -5,7 +5,6 @@ import fs from "fs";
 import path from "path";
 
 // store images in disk
-const homeDir = os.homedir();
 const uploadDir = path.join(os.homedir(), "upload");
 fs.mkdirSync(uploadDir, { recursive: true });
 

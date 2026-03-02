@@ -6,6 +6,7 @@ import { prisma } from '../libs/prisma';
 import bcrypt from "bcrypt";
 import JWT from "jsonwebtoken";
 import axios from "axios";
+import {ForgotPasswordSchema,LoginSchema,RegisterSchema,UpdateProfileSchema} from "../libs/zodClient"
 
 // logical layer of auth service
 const GenerateToken = async (UserId: number) => {
@@ -67,6 +68,10 @@ const RegisterUser = AsyncHandler(async (req, res) => {
         if (!email || !phone || !password || !fieldOfInterest || !fieldOfStudy || !dateOfBirth) {
             throw new ApiError(400, "All fields are required");
         }
+        const { error, data } = RegisterSchema.safeParse(req.body)
+        if (error) {
+            throw new ApiError(400, error.message);
+        }
 
         const existingUser = await prisma.user.findFirst({
             where: {
@@ -83,11 +88,11 @@ const RegisterUser = AsyncHandler(async (req, res) => {
 
         const user = await prisma.user.create({
             data: {
-                dateOfBirth,
-                fieldOfInterest,
-                fieldOfStudy,
-                email,
-                phone,
+                dateOfBirth : data.dateOfBirth,
+                fieldOfInterest: data.fieldOfInterest,
+                fieldOfStudy: data.fieldOfStudy,
+                email: data.email?.toLowerCase(),
+                phone : data.phone,
                 password: hashedPassword,
             },
         });
@@ -95,7 +100,7 @@ const RegisterUser = AsyncHandler(async (req, res) => {
         const link = GenerateVerificationLink(user.id);
 
         // issue while sending emailq
-        const verificationEmail = await axios.post(
+        await axios.post(
             "http://notification:4000/verification-email",
             { link, email }
         ).catch(error => {
@@ -125,12 +130,15 @@ const LoginUser = AsyncHandler(async (req, res) => {
         if (!password) {
             return res.status(400).json(new ApiResponse(400, null, "Password is required"));
         }
-
+        const { error, data } = LoginSchema.safeParse(req.body)
+        if (error) {
+            return res.status(400).json(new ApiResponse(400, null, error.message));
+        }
         const user = await prisma.user.findFirst({
             where: {
                 OR: [
-                    ...(email ? [{ email }] : []),
-                    ...(phone ? [{ phone }] : []),
+                    ...(data.email ? [{ email: data.email }] : []),
+                    ...(data.phone ? [{ phone: data.phone }] : []),
 
                 ].filter(Boolean),
                 isDeleted: false,
@@ -227,12 +235,17 @@ const LogOutUser = AsyncHandler(async (req, res) => {
 });
 
 const UpdateUserProfile = AsyncHandler(async (req, res) => {
-    const data = req.body
     const userId = req.user.id;
     try {
+        const { error , data} = UpdateProfileSchema.safeParse(req.body)
+        if (error) {
+            throw new ApiError(400, error.message);
+        }
         const user = await prisma.user.update({
             where: { id: userId },
-            data: data
+            data: {
+                ...data,
+            }
         });
         return res.status(200).json(
             new ApiResponse(200, user, "User profile updated successfully")
@@ -247,7 +260,10 @@ const UpdateUserProfile = AsyncHandler(async (req, res) => {
 const ForgotPassword = AsyncHandler(async (req, res) => {
     const userId = req.user.id;
     try {
-        // const { email, password } = req.body;
+        const { error, data } = ForgotPasswordSchema.safeParse(req.body)
+        if (error) {
+            throw new ApiError(400, error.message);
+        }
         // TODO
 
     } catch (error) {
