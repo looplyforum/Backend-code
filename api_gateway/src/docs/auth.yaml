@@ -1,0 +1,23 @@
+openapi: 3.0.0
+info:
+  title: Looply Auth API
+  version: 1.0.0
+  description: Auth API for Looply services
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+paths:
+  /auth/health:
+    get:
+      summary: Health check for Auth Service
+      tags:
+        - Auth Service
+      responses:
+        "200":
+          description: Auth Service is healthy
+          content:
+            application/json:
+              example:
+                status: ok

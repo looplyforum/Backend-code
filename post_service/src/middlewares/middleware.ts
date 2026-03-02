@@ -1,5 +1,9 @@
 import jwt from "jsonwebtoken";
-import AsyncHandler from "./AsyncHandler";
+import AsyncHandler from "../utils/AsyncHandler";
+
+
+
+
 
 const verifyToken = AsyncHandler(async (req, res, next) => {
   const accessToken = req.cookies.accessToken;

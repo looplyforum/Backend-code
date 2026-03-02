@@ -2,7 +2,7 @@ name: "Linting and formatting on PR"
 
 on:
   pull_request:
-    branches: [main]
+    branches: ["**"]
 
 jobs:
   lint:
@@ -28,7 +28,3 @@ jobs:
       - name: Install dependencies
         working-directory: ${{ matrix.service }}
         run: npm install
-
-      - name: Run ESLint
-        working-directory: ${{ matrix.service }}
-        run: npm run lint

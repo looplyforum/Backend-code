@@ -9,7 +9,7 @@ generator client {
   output   = "../src/generated/prisma"
 }
 datasource db {
-  provider = "postgresql"
+  provider = "postgresql"  
 }
 
 
@@ -23,7 +23,7 @@ model User {
   username               String?
   studentId              String?
   phone                  String    @unique
-  dateOfBirth            DateTime? //yyyy-mm-dd
+  dateOfBirth            DateTime? // TODO : yyyy-mm-dd format 
 
   password               String
 

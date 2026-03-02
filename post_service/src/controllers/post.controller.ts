@@ -13,8 +13,12 @@ const Slugify = (str: string, id: number) => {
 }
 
 const CreatePost = AsyncHandler(async (req, res) => {
+    console.log(req);
+    
     const { title, content, fieldOfInterest } = req.body;
     const userId = req.user.id;
+    console.log(userId);
+    
     if (!title || !content) {
         return res.status(400).json(
             new ApiResponse(400, null, "Title and content are required")
@@ -26,12 +30,12 @@ const CreatePost = AsyncHandler(async (req, res) => {
         );
     }
     try {
-        const slug = Slugify(title, userId);
+        const slug = Slugify(title, Number(userId));
         await prisma.post.create({
             data: {
                 title,
                 content,
-                authorId: userId,
+                authorId: Number(userId),
                 slug, // unique name for every post with user id to make it unique and searchable
                 isPublished: false,
                 fieldofInterest: fieldOfInterest
@@ -56,6 +60,8 @@ const UpdatePost = AsyncHandler(async (req, res) => {
 
     const { title, content, fieldOfInterest } = req.body;
     const postId = req.params.id;
+    console.log(postId);
+    
 
     if (!title || !content) {
         return res.status(400).json(
@@ -75,7 +81,7 @@ const UpdatePost = AsyncHandler(async (req, res) => {
             }
         })
         return res.status(200).json(
-            new ApiResponse(200, "Post updated successfully")
+            new ApiResponse(200, post, "Post updated successfully")
         )
     } catch (error) {
         if (error instanceof ApiError) {
@@ -135,7 +141,7 @@ const GetAllPosts = AsyncHandler(async (req, res) => {
     try {
         const posts = await prisma.post.findMany({
             where: {
-                authorId: userId,
+                authorId: Number(userId),
                 isDeleted: false
             }
         })

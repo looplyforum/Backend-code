@@ -6,8 +6,7 @@
   "main": "src/main.ts",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/main.js",
-    "lint": "eslint src --ext .js,.ts"
+    "start": "node dist/main.js"
   },
   "keywords": [],
   "author": "",

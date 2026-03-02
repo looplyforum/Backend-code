@@ -1,3 +1,4 @@
+
 import AsyncHandler from '../utils/AsyncHandler';
 import ApiError from '../utils/ApiError';
 import ApiResponse from '../utils/ApiResponse';
@@ -5,6 +6,7 @@ import { prisma } from '../libs/prisma';
 import bcrypt from "bcrypt";
 import JWT from "jsonwebtoken";
 import axios from "axios";
+import {ForgotPasswordSchema,LoginSchema,RegisterSchema,UpdateProfileSchema} from "../libs/zodClient"
 
 // logical layer of auth service
 const GenerateToken = async (UserId: number) => {
@@ -59,14 +61,16 @@ const GenerateVerificationLink = (id: number) => {
     return `${process.env.BASE_URL}/auth/verify-user?token=${verificationToken}`;
 };
 
-
-
 const RegisterUser = AsyncHandler(async (req, res) => {
     try {
         const { email, phone, password, fieldOfStudy, fieldOfInterest, dateOfBirth } = req.body;
 
         if (!email || !phone || !password || !fieldOfInterest || !fieldOfStudy || !dateOfBirth) {
             throw new ApiError(400, "All fields are required");
+        }
+        const { error, data } = RegisterSchema.safeParse(req.body)
+        if (error) {
+            throw new ApiError(400, error.message);
         }
 
         const existingUser = await prisma.user.findFirst({
@@ -84,11 +88,11 @@ const RegisterUser = AsyncHandler(async (req, res) => {
 
         const user = await prisma.user.create({
             data: {
-                dateOfBirth,
-                fieldOfInterest,
-                fieldOfStudy,
-                email,
-                phone,
+                dateOfBirth : data.dateOfBirth,
+                fieldOfInterest: data.fieldOfInterest,
+                fieldOfStudy: data.fieldOfStudy,
+                email: data.email?.toLowerCase(),
+                phone : data.phone,
                 password: hashedPassword,
             },
         });
@@ -96,7 +100,7 @@ const RegisterUser = AsyncHandler(async (req, res) => {
         const link = GenerateVerificationLink(user.id);
 
         // issue while sending emailq
-        const verificationEmail = await axios.post(
+        await axios.post(
             "http://notification:4000/verification-email",
             { link, email }
         ).catch(error => {
@@ -114,6 +118,7 @@ const RegisterUser = AsyncHandler(async (req, res) => {
 });
 
 const LoginUser = AsyncHandler(async (req, res) => {
+
     try {
         const { email, phone, password } = req.body;
 
@@ -125,12 +130,15 @@ const LoginUser = AsyncHandler(async (req, res) => {
         if (!password) {
             return res.status(400).json(new ApiResponse(400, null, "Password is required"));
         }
-
+        const { error, data } = LoginSchema.safeParse(req.body)
+        if (error) {
+            return res.status(400).json(new ApiResponse(400, null, error.message));
+        }
         const user = await prisma.user.findFirst({
             where: {
                 OR: [
-                    ...(email ? [{ email }] : []),
-                    ...(phone ? [{ phone }] : []),
+                    ...(data.email ? [{ email: data.email }] : []),
+                    ...(data.phone ? [{ phone: data.phone }] : []),
 
                 ].filter(Boolean),
                 isDeleted: false,
@@ -226,14 +234,18 @@ const LogOutUser = AsyncHandler(async (req, res) => {
     }
 });
 
-
 const UpdateUserProfile = AsyncHandler(async (req, res) => {
-    const data = req.body
     const userId = req.user.id;
     try {
+        const { error , data} = UpdateProfileSchema.safeParse(req.body)
+        if (error) {
+            throw new ApiError(400, error.message);
+        }
         const user = await prisma.user.update({
             where: { id: userId },
-            data: data
+            data: {
+                ...data,
+            }
         });
         return res.status(200).json(
             new ApiResponse(200, user, "User profile updated successfully")
@@ -245,11 +257,13 @@ const UpdateUserProfile = AsyncHandler(async (req, res) => {
     }
 });
 
-
 const ForgotPassword = AsyncHandler(async (req, res) => {
     const userId = req.user.id;
     try {
-        // const { email, password } = req.body;
+        const { error, data } = ForgotPasswordSchema.safeParse(req.body)
+        if (error) {
+            throw new ApiError(400, error.message);
+        }
         // TODO
 
     } catch (error) {
@@ -258,21 +272,35 @@ const ForgotPassword = AsyncHandler(async (req, res) => {
         }
     }
 });
-
 
 const UpdateProfilePicture = AsyncHandler(async (req, res) => {
-    try {
-        const profilePicture = req.file;
-        console.log(profilePicture);
+    const userId = req.user.id;
+    const profilePicture = req.file;
 
-        // TODO
+    try {
+        if (!profilePicture) {
+            return res.status(400).json(
+                new ApiResponse(400, null, "Profile picture is required")
+            );
+        }
+
+        const imageUrl = profilePicture.path;
+
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: { profilePicture: imageUrl }
+        });
+        return res.status(200).json(
+            new ApiResponse(200, user.profilePicture, "Profile picture updated successfully")
+        );
     } catch (error) {
         if (error instanceof ApiError) {
-            return res.status(error.statusCode).json(error)
+            return res.status(error.statusCode).json(
+                new ApiResponse(error.statusCode, null, error.message)
+            )
         }
     }
 });
-
 
 const DeleteUser = AsyncHandler(async (req, res) => {
     try {
@@ -293,14 +321,12 @@ const DeleteUser = AsyncHandler(async (req, res) => {
     }
 });
 
-
 const GetUser = AsyncHandler(async (req, res) => {
     try {
         const userId = req.user.id;
-        const user = prisma.user.findFirst({
+        const user = await prisma.user.findFirst({
             where: { id: Number(userId) }
-
-        })
+        });
         return res.status(200).json(new ApiResponse(200, user, "User Fetched Successfully"))
 
     } catch (error) {
@@ -309,7 +335,6 @@ const GetUser = AsyncHandler(async (req, res) => {
         }
     }
 });
-
 
 const LoginWithGoogle = AsyncHandler(async (req, res) => {
     try {
