@@ -15,4 +15,4 @@ RUN npm run build
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "echo $DATABASE_URL && npx prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "echo $DATABASE_URL && npx prisma migrate deploy && node dist/index.js"]

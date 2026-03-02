@@ -5,7 +5,8 @@ import { config } from "dotenv"
 import rateLimit from "express-rate-limit"
 import postRoute from "./routes/post.route"
 import ApplicationRoute from "./routes/application.route"
-
+import cookieParser from "cookie-parser";
+import { verifyToken } from "./middlewares/middleware"
 
 config({
   path: "./.env"
@@ -19,6 +20,8 @@ app.use(cors())
 app.use(morgan("dev"))
 app.use(express.json())
 
+app.use(cookieParser());
+
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -26,6 +29,7 @@ app.use(
   })
 );
 
+app.use(verifyToken);
 
 app.use('/application',ApplicationRoute)
 

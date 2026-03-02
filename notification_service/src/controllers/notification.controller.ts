@@ -20,7 +20,6 @@ const verificationEmail = AsyncHandler(async (req, res) => {
   );
 });
 
-
 const logInAlert = AsyncHandler(async (req, res) => {
     const {otp, email} = req.body;
     try {

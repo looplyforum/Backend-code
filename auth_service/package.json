@@ -6,8 +6,7 @@
   "main": "src/main.ts",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/main.js",
-    "lint": "eslint src --ext .js,.ts"
+    "start": "node dist/main.js"
   },
   "keywords": [],
   "author": "",
@@ -31,7 +30,8 @@
     "pg": "^8.18.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-model-validator": "^3.0.21",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

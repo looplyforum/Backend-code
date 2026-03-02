@@ -9,7 +9,6 @@ import cookieParser from "cookie-parser";
 config({ path: "./.env" });
 
 const app = express();
-const PORT = process.env.PORT || 4000;
 
 app.use(cors());
 app.use(morgan("dev"));
@@ -28,7 +27,6 @@ app.use(
 
 app.use("/", authRoute);
 
-
-app.listen(PORT, () => {
-  console.log(`Auth service running on port ${PORT}`);
-});
+export {
+  app
+}
