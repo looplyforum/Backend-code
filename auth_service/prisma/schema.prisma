@@ -23,7 +23,7 @@ model User {
   username               String?
   studentId              String?
   phone                  String    @unique
-  dateOfBirth            DateTime? // TODO : yyyy-mm-dd format 
+  dateOfBirth            DateTime?   @db.Date // yyyy-mm-dd format 
 
   password               String
 

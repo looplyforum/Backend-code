@@ -88,7 +88,7 @@ const RegisterUser = AsyncHandler(async (req, res) => {
 
         const user = await prisma.user.create({
             data: {
-                dateOfBirth : data.dateOfBirth,
+                dateOfBirth : new Date(data.dateOfBirth),
                 fieldOfInterest: data.fieldOfInterest,
                 fieldOfStudy: data.fieldOfStudy,
                 email: data.email?.toLowerCase(),
