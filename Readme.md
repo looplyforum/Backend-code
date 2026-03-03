@@ -1,6 +1,12 @@
 
 ## looply_server architecture (microservices architecture)
 
+api gateway
+|- auth service
+|- posts service
+|- notification service
+
+
 ### user requests -> api gateway -> auth service -> database
 ### user request -> api gateway -> posts service -> database
 
@@ -83,3 +89,12 @@ user login
 user create post 
 after uploading the post it will to everyone with same field of interests limit 10 intersets
 auto block user who are spanning 
+
+
+week 2 and 3 :
+- otp verification for login
+- openapi setup
+- notification service 
+- chat room for applicants
+- integration testing
+- 

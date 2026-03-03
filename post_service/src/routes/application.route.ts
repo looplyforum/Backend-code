@@ -17,18 +17,8 @@ router.get('/health' , (_, res) => {
 
 router.get('/',GetAllApplications)
 
-/*
-applicationId param
-*/
-router.get('/:id' , GetApplicationById)
-
-
-/*
-    postId param
-    limitParam optional query
-    pageParam optional query
-*/
-router.get('/all' , GetAllApplicants)
+router.get('/all', GetAllApplicants)
+router.get('/:id', GetApplicationById)
 
 router.post('/new' , NewApplication);
 
