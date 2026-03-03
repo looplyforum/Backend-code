@@ -13,7 +13,6 @@ const Slugify = (str: string, id: number) => {
 }
 
 const CreatePost = AsyncHandler(async (req, res) => {
-    console.log(req);
     
     const { title, content, fieldOfInterest } = req.body;
     const userId = req.user.id;
@@ -105,6 +104,7 @@ const DeletePost = AsyncHandler(async (req, res) => {
                 isDeleted: true
             }
         })
+        // delete application related to this post
         return res.status(200).json(
             new ApiResponse(200, "Post deleted successfully")
         )
@@ -160,6 +160,7 @@ const GetAllPosts = AsyncHandler(async (req, res) => {
 
 const PublishPost = AsyncHandler(async (req, res) => {
     const postId = req.params.id;
+
     try {
 
         const post = await prisma.post.update({

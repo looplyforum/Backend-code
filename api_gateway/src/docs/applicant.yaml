@@ -1,0 +1,246 @@
+openapi: 3.0.0
+
+info:
+  title: Application Service API
+  version: 1.0.0
+  description: Manage job applications
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+
+    Application:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        postId:
+          type: integer
+        motivation:
+          type: string
+        contribution:
+          type: string
+        learningGoals:
+          type: string
+        weeklyCommitmentHours:
+          type: integer
+        longTermInterest:
+          type: boolean
+        applicationStatus:
+          type: string
+          enum: [PENDING, ACCEPTED, REJECTED]
+        isDeleted:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateApplicationInput:
+      type: object
+      required:
+        - motivation
+        - contribution
+        - learningGoals
+        - weeklyCommitmentHours
+        - longTermInterest
+      properties:
+        motivation:
+          type: string
+          example: I am passionate about backend systems
+        contribution:
+          type: string
+          example: I can build APIs
+        learningGoals:
+          type: string
+          example: Learn scalable architecture
+        weeklyCommitmentHours:
+          type: integer
+          example: 10
+        longTermInterest:
+          type: boolean
+          example: true
+
+    UpdateApplicationInput:
+      type: object
+      properties:
+        motivation:
+          type: string
+        contribution:
+          type: string
+        learningGoals:
+          type: string
+        weeklyCommitmentHours:
+          type: integer
+        longTermInterest:
+          type: boolean
+
+    ChangeStatusInput:
+      type: object
+      required:
+        - applicationStatus
+      properties:
+        applicationStatus:
+          type: string
+          enum: [PENDING, ACCEPTED, REJECTED]
+
+paths:
+
+  /application/health:
+    get:
+      summary: Application service health check
+      responses:
+        200:
+          description: Service running
+
+  /application:
+    get:
+      summary: Get all applications for logged-in user
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Applications fetched successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Application'
+
+  /application/{id}:
+    get:
+      summary: Get application by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Application fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+
+  /application/all:
+    get:
+      summary: Get all applicants for a specific post
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: postId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+      responses:
+        200:
+          description: Applicants fetched successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Application'
+
+  /application/new/{postId}:
+    post:
+      summary: Create new application
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationInput'
+      responses:
+        200:
+          description: Application created successfully
+
+  /application/update/{id}:
+    post:
+      summary: Update application (only if PENDING)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApplicationInput'
+      responses:
+        200:
+          description: Application updated successfully
+
+  /application/delete/{id}:
+    post:
+      summary: Soft delete application (only if PENDING)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Application deleted successfully
+
+  /application/status/{id}:
+    post:
+      summary: Change application status (author only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeStatusInput'
+      responses:
+        200:
+          description: Application status updated successfully

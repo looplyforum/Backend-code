@@ -8,6 +8,7 @@ import cluster from "node:cluster"
 import os from "node:os"
 import process from "node:process"
 
+import { setupSwagger } from "./utils/swagger";
 
 import { verifyToken } from "./utils/middleware"
 
@@ -23,6 +24,8 @@ app.use(cookieParser());
 
 
 
+
+setupSwagger(app);
 
 app.get("/health", (_, res) => {
   return res.status(200).json({ status: "ok" });

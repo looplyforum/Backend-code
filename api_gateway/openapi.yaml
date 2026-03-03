@@ -1,0 +1,715 @@
+openapi: 3.0.0
+
+info:
+  title: Job Platform API Gateway
+  version: 1.0.0
+  description: Central API Gateway for all services
+
+servers:
+  - url: http://localhost:3000
+
+tags:
+  - name: Gateway
+    description: API Gateway routes
+  - name: Auth
+    description: Authentication service routes
+  - name: Post
+    description: Post service routes
+  - name: Application
+    description: Application service routes
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterInput:
+      type: object
+      required:
+        - email
+        - phone
+        - password
+        - fieldOfStudy
+        - fieldOfInterest
+        - dateOfBirth
+      properties:
+        email:
+          type: string
+          example: test@example.com
+        phone:
+          type: string
+          example: "9876543210"
+        password:
+          type: string
+          example: StrongPassword123
+        fieldOfStudy:
+          type: array
+          items:
+            type: string
+          example: ["Computer Science", "Mathematics"]
+        fieldOfInterest:
+          type: array
+          items:
+            type: string
+          example: ["Backend", "AI"]
+        dateOfBirth:
+          type: string
+          format: date
+          example: "2000-01-01"
+    UpdateProfileInput:
+      type: object
+      required:
+        - email
+        - phone
+        - password
+        - fieldOfStudy
+        - fieldOfInterest
+        - dateOfBirth
+        - collegeName
+        - yearOfJoining
+        - yearOfPassing
+        
+      properties:
+        email:
+          type: string
+          example: test@example.com
+        phone:
+          type: string
+          example: "9876543210"
+        password:
+          type: string
+          example: StrongPassword123
+        fieldOfStudy:
+          type: array
+          items:
+            type: string
+          example: ["Computer Science", "Mathematics"]
+        fieldOfInterest:
+          type: array
+          items:
+            type: string
+          example: ["Backend", "AI"]
+        dateOfBirth:
+          type: string
+          format: date
+          example: "2000-01-01"
+        collegeName:
+          type: string
+          example: "ABC University"
+        yearOfJoining:
+          type: integer
+          example: 2018
+        yearOfPassing:
+          type: integer
+          example: 2022
+    LoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+        phone:
+          type: string
+        password:
+          type: string
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        slug:
+          type: string
+        authorId:
+          type: integer
+        fieldofInterest:
+          type: array
+          items:
+            type: string
+        isPublished:
+          type: boolean
+        isDeleted:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CreatePostInput:
+      type: object
+      required:
+        - title
+        - content
+      properties:
+        title:
+          type: string
+          example: Backend Developer Needed
+        content:
+          type: string
+          example: We are hiring Node.js developers.
+        fieldOfInterest:
+          type: array
+          items:
+            type: string
+          example: ["Backend", "Node.js"]
+    UpdatePostInput:
+      type: object
+      required:
+        - title
+        - content
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        fieldOfInterest:
+          type: array
+          items:
+            type: string
+    Application:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        postId:
+          type: integer
+        motivation:
+          type: string
+        contribution:
+          type: string
+        learningGoals:
+          type: string
+        weeklyCommitmentHours:
+          type: integer
+        longTermInterest:
+          type: boolean
+        applicationStatus:
+          type: string
+          enum: [PENDING, ACCEPTED, REJECTED]
+        isDeleted:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateApplicationInput:
+      type: object
+      required:
+        - motivation
+        - contribution
+        - learningGoals
+        - weeklyCommitmentHours
+        - longTermInterest
+      properties:
+        motivation:
+          type: string
+          example: I am passionate about backend systems
+        contribution:
+          type: string
+          example: I can build APIs
+        learningGoals:
+          type: string
+          example: Learn scalable architecture
+        weeklyCommitmentHours:
+          type: integer
+          example: 10
+        longTermInterest:
+          type: boolean
+          example: true
+
+    UpdateApplicationInput:
+      type: object
+      properties:
+        motivation:
+          type: string
+        contribution:
+          type: string
+        learningGoals:
+          type: string
+        weeklyCommitmentHours:
+          type: integer
+        longTermInterest:
+          type: boolean
+
+    ChangeStatusInput:
+      type: object
+      required:
+        - applicationStatus
+      properties:
+        applicationStatus:
+          type: string
+          enum: [PENDING, ACCEPTED, REJECTED, UNDER_REVIEW, WITHDRAWN]
+
+paths:
+# api gateway routes
+  /health:
+    get:
+      tags:
+        - Gateway
+      summary: Health check
+      responses:
+        200:
+          description: API is running
+
+# auth service routes
+  /auth/health:
+    get:
+      tags:
+        - Auth
+      summary: Auth service health check
+      responses:
+        200:
+          description: Auth service running
+
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterInput'
+      responses:
+        201:
+          description: User registered successfully
+        409:
+          description: User already exists
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+      responses:
+        200:
+          description: Login successful
+        401:
+          description: Invalid credentials
+
+  /auth/google:
+    post:
+      tags:
+        - Auth
+      summary: Login with Google (WIP)
+      responses:
+        200:
+          description: Under development
+
+  /auth/verify-user:
+    get:
+      tags:
+        - Auth
+      summary: Verify email using token
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Email verified
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout user
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Logged out successfully
+
+  /auth/update-profile:
+    post:
+      tags:
+        - Auth
+      summary: Update user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileInput'
+      responses:
+        200:
+          description: Profile updated
+
+  /auth/update-profile-picture:
+    post:
+      tags:
+        - Auth
+      summary: Upload profile picture
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                profilePicture:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Profile picture updated
+
+  /auth/delete-user:
+    delete:
+      tags:
+        - Auth
+      summary: Delete user account
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Account deleted
+
+  /auth/get-user:
+    get:
+      tags:
+        - Auth
+      summary: Get current user
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: User fetched successfully
+
+# post service routes
+  /posts/health:
+    get:
+      tags:
+        - Post
+      summary: Post service health check
+      responses:
+        200:
+          description: Post service running
+
+  /posts/:
+    get:
+      tags:
+        - Post
+      summary: Get published posts by interests
+      parameters:
+        - in: query
+          name: interests
+          required: true
+          schema:
+            type: string
+          description: Comma separated interests (e.g. Backend,Node.js)
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+      responses:
+        200:
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+
+  /posts/my-posts:
+    get:
+      tags:
+        - Post
+      summary: Get all posts created by logged-in user
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: User posts retrieved
+
+  /posts/{id}:
+    get:
+      tags:
+        - Post
+      summary: Get post by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Post retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+
+  /posts/create:
+    post:
+      tags:
+        - Post
+      summary: Create new post
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostInput'
+      responses:
+        201:
+          description: Post created successfully
+
+  /posts/update/{id}:
+    post:
+      tags:
+        - Post
+      summary: Update post by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePostInput'
+      responses:
+        200:
+          description: Post updated successfully
+
+  /posts/delete/{id}:
+    post:
+      tags:
+        - Post
+      summary: Soft delete post
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Post deleted successfully
+
+  /posts/publish/{id}:
+    post:
+      tags:
+        - Post
+      summary: Publish post
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Post published successfully
+
+  
+  /posts/application/health:
+    get:
+      tags:
+        - Application
+      summary: Application service health check
+      responses:
+        200:
+          description: Service running
+
+  /posts/application:
+    get:
+      tags:
+        - Application
+      summary: Get all applications for logged-in user
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Applications fetched successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Application'
+
+  /posts/application/{id}:
+    get:
+      tags:
+        - Application
+      summary: Get application by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Application fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+
+  /posts/application/all:
+    get:
+      tags:
+        - Application
+      summary: Get all applicants for a specific post
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: postId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+      responses:
+        200:
+          description: Applicants fetched successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Application'
+
+  /posts/application/new/{postId}:
+    post:
+      tags:
+        - Application
+      summary: Create new application
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApplicationInput'
+      responses:
+        200:
+          description: Application created successfully
+
+  /posts/application/update/{id}:
+    post:
+      tags:
+        - Application
+      summary: Update application (only if PENDING)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApplicationInput'
+      responses:
+        200:
+          description: Application updated successfully
+
+  /posts/application/delete/{id}:
+    post:
+      tags:
+        - Application
+      summary: Soft delete application (only if PENDING)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Application deleted successfully
+
+  /posts/application/status/{id}:
+    post:
+      tags:
+        - Application
+      summary: Change application status (author only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeStatusInput'
+      responses:
+        200:
+          description: Application status updated successfully

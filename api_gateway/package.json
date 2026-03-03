@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/main.ts",
   "scripts": {
-    "build": "tsc",
+  "build": "tsc && mkdir -p dist/docs && cp -r src/docs/* dist/docs/ && cp openapi.yaml dist/",
     "start": "node dist/main.js",
     "lint": "eslint src --ext .js,.ts"
   },
@@ -24,7 +24,8 @@
     "morgan": "^1.10.1",
     "nodemon": "^3.1.11",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
@@ -35,6 +36,7 @@
     "@types/node": "^25.2.3",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
+    "@types/yamljs": "^0.2.34",
     "eslint": "^10.0.1",
     "globals": "^17.3.0",
     "jiti": "^2.6.1",

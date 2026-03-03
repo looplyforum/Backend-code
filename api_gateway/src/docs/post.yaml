@@ -1,0 +1,228 @@
+openapi: 3.0.0
+
+info:
+  title: Post Service API
+  version: 1.0.0
+  description: API for managing posts
+
+servers:
+  - url: http://localhost:4000
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        slug:
+          type: string
+        authorId:
+          type: integer
+        fieldofInterest:
+          type: array
+          items:
+            type: string
+        isPublished:
+          type: boolean
+        isDeleted:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreatePostInput:
+      type: object
+      required:
+        - title
+        - content
+      properties:
+        title:
+          type: string
+          example: Backend Developer Needed
+        content:
+          type: string
+          example: We are hiring Node.js developers.
+        fieldOfInterest:
+          type: array
+          items:
+            type: string
+          example: ["Backend", "Node.js"]
+
+    UpdatePostInput:
+      type: object
+      required:
+        - title
+        - content
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        fieldOfInterest:
+          type: array
+          items:
+            type: string
+
+paths:
+
+  /health:
+    get:
+      tags:
+        - Post
+      summary: Post service health check
+      responses:
+        200:
+          description: Post service running
+
+  /:
+    get:
+      tags:
+        - Post
+      summary: Get published posts by interests
+      parameters:
+        - in: query
+          name: interests
+          required: true
+          schema:
+            type: string
+          description: Comma separated interests (e.g. Backend,Node.js)
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+      responses:
+        200:
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+
+  /my-posts:
+    get:
+      tags:
+        - Post
+      summary: Get all posts created by logged-in user
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: User posts retrieved
+
+  /{id}:
+    get:
+      tags:
+        - Post
+      summary: Get post by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Post retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+
+  /create:
+    post:
+      tags:
+        - Post
+      summary: Create new post
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostInput'
+      responses:
+        201:
+          description: Post created successfully
+
+  /update/{id}:
+    post:
+      tags:
+        - Post
+      summary: Update post by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePostInput'
+      responses:
+        200:
+          description: Post updated successfully
+
+  /delete/{id}:
+    post:
+      tags:
+        - Post
+      summary: Soft delete post
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Post deleted successfully
+
+  /publish/{id}:
+    post:
+      tags:
+        - Post
+      summary: Publish post
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Post published successfully
