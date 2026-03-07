@@ -5,10 +5,45 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model ChatMessage {
+  id          String   @id @default(uuid())
+  senderId    Int
+  content     String
+  roomId      String
+  room        ChatRoom @relation(fields: [roomId], references: [id])
+  createdAt   DateTime @default(now())
+  @@index([roomId])
+}
+
+model ChatRoom {
+  id          String   @id @default(uuid())
+  name        String?
+  ownerId     Int
+  postId      Int?     @unique
+  type        CHATROOMTYPE
+  members     RoomMember[]
+  messages    ChatMessage[]
+  createdAt   DateTime @default(now())
+}
+
+model RoomMember {
+  id          String   @id @default(uuid())
+  userId      Int
+  roomId      String
+  room        ChatRoom @relation(fields: [roomId], references: [id])
+  joinedAt    DateTime @default(now())
+  @@unique([userId, roomId])
+}
+
+enum CHATROOMTYPE {
+  PUBLIC
+  PRIVATE
+  P2P
 }

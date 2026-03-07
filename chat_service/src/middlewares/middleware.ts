@@ -1,3 +1,4 @@
+import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import AsyncHandler from "../utils/AsyncHandler";
 
@@ -5,7 +6,15 @@ import AsyncHandler from "../utils/AsyncHandler";
 
 
 
-const verifyToken = AsyncHandler(async (req, res, next) => {
+declare global {
+  namespace Express {
+    interface Request {
+      user?: any;
+    }
+  }
+}
+
+const verifyToken = AsyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const accessToken = req.cookies.accessToken;
     
   if (!accessToken) {

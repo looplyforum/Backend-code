@@ -15,17 +15,17 @@ router.get('/health' , (_, res) => {
     res.status(200).json({ message: "Application service is running" });
 })
 
-router.get('/',GetAllApplications)
+router.get('/', GetAllApplications)
 
-router.get('/all', GetAllApplicants)
-router.get('/:id', GetApplicationById)
+router.get('/all/:id', GetAllApplicants);  
+router.get('/:id', GetApplicationById);
 
-router.post('/new' , NewApplication);
+router.post('/new/:id', NewApplication);  
 
-router.post('/delete' , DeleteApplication)
+router.post('/delete/:id', DeleteApplication);  
 
-router.post('/update' , UpdateApplication)
+router.post('/update/:id', UpdateApplication);
 
-router.post('/status', ChangeApplicationStatus)
+router.post('/status/:id', ChangeApplicationStatus);
 
 export default router

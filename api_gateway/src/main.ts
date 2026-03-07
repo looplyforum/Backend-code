@@ -18,7 +18,25 @@ config({
   path: "./.env",
 });
 
-app.use(cors());
+import promBundle from "express-prom-bundle";
+
+const metricsMiddleware = promBundle({
+  includeMethod: true,
+  includePath: true,
+  includeStatusCode: true,
+  includeUp: true,
+  customLabels: { project_name: 'looply', service: 'api_gateway' },
+  promClient: {
+    collectDefaultMetrics: {}
+  }
+});
+
+app.use(metricsMiddleware);
+
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true,
+}));
 app.use(morgan("dev"));
 app.use(cookieParser());
 
@@ -68,6 +86,18 @@ app.use(
 );
 
 
+app.use(
+  "/chat",
+  verifyToken,
+  createProxyMiddleware({
+    target: "http://chat:4000",
+    changeOrigin: true,
+    pathRewrite: { "^/chat": "" },
+    logger: console,
+    
+
+  })
+);
 const PORT = process.env.PORT || 3000;
 
 if (cluster.isPrimary) {

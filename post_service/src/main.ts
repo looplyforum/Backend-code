@@ -7,6 +7,7 @@ import postRoute from "./routes/post.route"
 import ApplicationRoute from "./routes/application.route"
 import cookieParser from "cookie-parser";
 import { verifyToken } from "./middlewares/middleware"
+import promBundle from "express-prom-bundle";
 
 config({
   path: "./.env"
@@ -15,6 +16,20 @@ config({
 
 const PORT = process.env.PORT || 4000
 const app = express()
+
+
+const metricsMiddleware = promBundle({
+  includeMethod: true,
+  includePath: true,
+  includeStatusCode: true,
+  includeUp: true,
+  customLabels: { project_name: 'looply', service: 'post' },
+  promClient: {
+    collectDefaultMetrics: {}
+  }
+});
+
+app.use(metricsMiddleware);
 
 app.use(cors())
 app.use(morgan("dev"))
