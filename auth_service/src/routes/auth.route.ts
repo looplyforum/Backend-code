@@ -9,7 +9,10 @@ import {
   UpdateUserProfile,
   LoginWithGoogle,
   VerifyUser,
+  VerifyOTP,
   GetUser,
+  GetUserById,
+  GetUsersByInterests,
 } from "../controllers/auth.controller";
 import { upload } from "../middlewares/upload.middleware";
 import { verifyToken } from "../middlewares/jwt.middleware";
@@ -24,10 +27,14 @@ router.get("/health", (req, res) => {
 router.post("/register", RegisterUser);
 
 router.post("/login", LoginUser);
+router.post("/verify-otp", VerifyOTP);
 
 router.post("/google", LoginWithGoogle); // TODO google login
 
 router.get("/verify-user", VerifyUser);   // TODO email verification
+
+router.get("/users/:id", GetUserById);
+router.get("/users-by-interests", GetUsersByInterests);
 
 router.use(verifyToken);
 

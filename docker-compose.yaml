@@ -8,6 +8,17 @@ services:
   
     ports:
       - "5432:5432"
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass looplyredispassword
+    restart: unless-stopped
+    networks:
+      - default
 
   api_gateway:
     build: ./api_gateway
@@ -29,8 +40,6 @@ services:
       - api_gateway
     env_file:
       - ./auth_service/.env
-    # environment:
-    #   DATABASE_URL: postgres://looply:password@postgres:5432/looply
     networks:
       - default
     volumes:
@@ -48,6 +57,16 @@ services:
     networks:
       - default
 
+  notification-worker:
+    build: ./notification_service
+    command: npm run worker
+    depends_on:
+      - redis
+    env_file:
+      - ./notification_service/.env
+    networks:
+      - default
+
   posts:
     build: ./post_service
     ports:
@@ -59,11 +78,52 @@ services:
       -  ./post_service/.env
     networks:
       - default
+  
+  chat:
+    build: ./chat_service
+    ports:
+      - "4005:4000"
+    depends_on:
+      - postgres
+      - api_gateway
+    env_file:
+      -  ./chat_service/.env
+    networks:
+      - default
+      
 
+  # don't use unitl use want to monitor all the services 
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+  #   networks:
+  #     - default
+  #   depends_on:
+  #     - api_gateway
+  #     - auth
+  #     - notification
+  #     - posts
+  #     - chat
 
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   ports:
+  #     - "3001:3000"
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #   networks:
+  #     - default
+  #   depends_on:
+  #     - prometheus
+    
 networks:
   default:
     driver: bridge
 
 volumes:
   uploads:
+  redis_data:
+    driver: local

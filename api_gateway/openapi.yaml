@@ -6,9 +6,11 @@ info:
   description: Central API Gateway for all services
 
 servers:
-  - url: http://localhost:3000
+  - description: Local development server
+    url: http://localhost:3000
 
 tags:
+
   - name: Gateway
     description: API Gateway routes
   - name: Auth
@@ -17,6 +19,10 @@ tags:
     description: Post service routes
   - name: Application
     description: Application service routes
+  - name: Chat
+    description: Chat service routes
+  - name: Notification
+    description: Notification service routes
 
 components:
   securitySchemes:
@@ -26,6 +32,7 @@ components:
       bearerFormat: JWT
 
   schemas:
+
     RegisterInput:
       type: object
       required:
@@ -59,6 +66,7 @@ components:
           type: string
           format: date
           example: "2000-01-01"
+
     UpdateProfileInput:
       type: object
       required:
@@ -105,6 +113,7 @@ components:
         yearOfPassing:
           type: integer
           example: 2022
+
     LoginInput:
       type: object
       properties:
@@ -114,6 +123,18 @@ components:
           type: string
         password:
           type: string
+
+    VerifyOTPInput:
+      type: object
+      required:
+        - userId
+        - otp
+      properties:
+        userId:
+          type: integer
+        otp:
+          type: string
+
     Post:
       type: object
       properties:
@@ -133,6 +154,8 @@ components:
             type: string
         isPublished:
           type: boolean
+        views:
+          type: integer
         isDeleted:
           type: boolean
         createdAt:
@@ -141,6 +164,7 @@ components:
         updatedAt:
           type: string
           format: date-time
+
     CreatePostInput:
       type: object
       required:
@@ -158,6 +182,7 @@ components:
           items:
             type: string
           example: ["Backend", "Node.js"]
+
     UpdatePostInput:
       type: object
       required:
@@ -172,6 +197,7 @@ components:
           type: array
           items:
             type: string
+
     Application:
       type: object
       properties:
@@ -251,6 +277,60 @@ components:
           type: string
           enum: [PENDING, ACCEPTED, REJECTED, UNDER_REVIEW, WITHDRAWN]
 
+    ChatRoom:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        ownerId:
+          type: integer
+        type:
+          type: string
+          enum: [PUBLIC, PRIVATE, P2P]
+        createdAt:
+          type: string
+          format: date-time
+
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        senderId:
+          type: integer
+        roomId:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateChatRoomInput:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [PUBLIC, PRIVATE, P2P]
+        receiverId:
+          type: integer
+          description: Required if type is P2P
+
+    SendMessageInput:
+      type: object
+      required:
+        - roomId
+        - content
+      properties:
+        roomId:
+          type: string
+        content:
+          type: string
+
 paths:
 # api gateway routes
   /health:
@@ -302,9 +382,26 @@ paths:
               $ref: '#/components/schemas/LoginInput'
       responses:
         200:
-          description: Login successful
+          description: OTP sent to your email. Please verify.
         401:
           description: Invalid credentials
+
+  /auth/verify-otp:
+    post:
+      tags:
+        - Auth
+      summary: Verify OTP and login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOTPInput'
+      responses:
+        200:
+          description: OTP verified successfully
+        401:
+          description: Invalid or expired OTP
 
   /auth/google:
     post:
@@ -399,6 +496,39 @@ paths:
         200:
           description: User fetched successfully
 
+  /auth/users/{id}:
+    get:
+      tags:
+        - Auth
+      summary: Get user by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: User fetched successfully
+        404:
+          description: User not found
+
+  /auth/users-by-interests:
+    get:
+      tags:
+        - Auth
+      summary: Get users by interests
+      parameters:
+        - in: query
+          name: interests
+          required: true
+          schema:
+            type: string
+          description: Comma separated interests
+      responses:
+        200:
+          description: Users fetched successfully
+
 # post service routes
   /posts/health:
     get:
@@ -409,7 +539,7 @@ paths:
         200:
           description: Post service running
 
-  /posts/:
+  /posts:
     get:
       tags:
         - Post
@@ -450,7 +580,7 @@ paths:
         - BearerAuth: []
       responses:
         200:
-          description: User posts retrieved
+          description: Posts retrieved successfully
 
   /posts/{id}:
     get:
@@ -713,3 +843,213 @@ paths:
       responses:
         200:
           description: Application status updated successfully
+
+# chat service routes
+
+
+  /chat/health:
+    get:
+      tags:
+        - Chat
+      summary: Chat service health check
+      responses:
+        200:
+          description: Service running
+
+  /chat:
+    post:
+      tags:
+        - Chat
+      summary: Create a chat room (Group or P2P)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChatRoomInput'
+      responses:
+        200:
+          description: Chat room retrieved or created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  chatRoom:
+                    $ref: '#/components/schemas/ChatRoom'
+
+    get:
+      tags:
+        - Chat
+      summary: Get user's chat rooms
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: User chat rooms retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  chatRooms:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChatRoom'
+
+  /chat/join/{roomId}:
+    post:
+      tags:
+        - Chat
+      summary: Join a public chat room
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: roomId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Joined successfully
+        403:
+          description: Cannot join private room without invitation
+
+  /message:
+    post:
+      tags:
+        - Chat
+      summary: Send a chat message
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageInput'
+      responses:
+        201:
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  chatMessage:
+                    $ref: '#/components/schemas/ChatMessage'
+
+  /message/{roomId}:
+    get:
+      tags:
+        - Chat
+      summary: Get chat history for a room
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: roomId
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Chat history retrieved successfully
+
+# notification service routes
+  /notifications/health:
+    get:
+      tags:
+        - Notification
+      summary: Notification service health check
+      responses:
+        200:
+          description: Service running
+
+  /notifications/log-in-alert:
+    post:
+      tags:
+        - Notification
+      summary: Send login alert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                otp:
+                  type: string
+      responses:
+        200:
+          description: Alert queued
+
+  /notifications/verification-email:
+    post:
+      tags:
+        - Notification
+      summary: Send verification email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                link:
+                  type: string
+      responses:
+        200:
+          description: Email queued
+
+  /notifications/notifications:
+    get:
+      tags:
+        - Notification
+      summary: Get user notifications
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Notifications fetched successfully
+
+  /notifications/notifications/{id}/read:
+    patch:
+      tags:
+        - Notification
+      summary: Mark notification as read
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChatMessage'

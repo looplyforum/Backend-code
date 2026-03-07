@@ -1,31 +1,30 @@
-
 ## looply_server architecture (microservices architecture)
 
 api gateway
 |- auth service
 |- posts service
 |- notification service
-
+|- chat service
 
 ### user requests -> api gateway -> auth service -> database
+
 ### user request -> api gateway -> posts service -> database
 
-### notification service only handles email for now 
-
-
+### notification service only handles email for now
 
 ### swagger api documentation
 
-
 ## folder structure of auth_service
+
 - controllers: contains all the controllers of the auth service bussiness logic
 - libs: contains all the libs of the auth service third party libs
 - middlewares: contains all the middlewares of the auth service
-- routes: contains all the routes of the auth service end points 
+- routes: contains all the routes of the auth service end points
 - utils: contains all the utils of the auth service utility functions
 - prisma : contains schema file for database
 
-# services 
+# services
+
 - auth service
 - notification service
 - api gateway
@@ -33,68 +32,212 @@ api gateway
 
 ## how to setup project locally
 
-1. clone the repository 
+1. clone the repository
 
 2. install docker and docker compose
 
 3. run docker compose up --build
 
-
 ## TODOS:
+
 - otp verification for login
-- chat room for applicants 
+- chat room for applicants
 - project limit to users
 - fetch posts based on user profile
 - auto block user who are spanning -> on what basis?
-- 
-
-
-
-// Each idea needs to have restrictions 
-// 1: Only people who are a part of the idea should be allowed to view the details -> this is fetching the post based on user profile
-
-// 2: How would someone be a part of the idea? 
-
-// 2.1: Anyone who has been approved by the idea owner as the person who they feel is right fit for the idea 
-// 2.2 How would the owner select anyone? 
-// 2.2.1: The idea owner must be able to submit the idea card amd the following information 
-// A: Idea name 
-// B: Short description 
-// C: What skillsets are needed ( this would be the way the idea would be available to people on their feed  based on their selected interests) 
-// D: Number of people needed - (Drop down between between 1- 10 and then 10+ as the next option) 
-// E:  Once anyone clicks on the idea - they need to be presented with a screen that has the description of the idea and the option for them to express an interest to join the idea 
-// F: When the express interest is clicked - Form needs to open up with these set of questions and a character box with a char limit of not exceeding 200 words per question (Questions can be customizable by the idea owner , however there need to be 5 default questions 
-
-// a: What impressed you to join the idea
-// b: Explain what you can bring on table as a contribution for the idea 
-// c: What are you looking to learn from this idea 
-// d: How much time you can dedicate on a weekly basis to the idea? 
-// e: Would you be willing to work on this idea for a long term if the idea owner decides to build from the idea to a product or a service? 
-
-// G: Provide a submit form button 
-// H: Thank you note - for expressing the interest 
-// I: Notification to the idea owner on the expression of interest & a nitrification to the Participating enthusiast on the confirmation of the outcome -> TODO
-// J: Idea interest owner view 
-
-// a: Be able to see the profile of the person expressing their interest 
-// b: ask more questions if need be( if there were no questions asked at the first time) 
-// c: ability to see the people needed for the idea (resource availability and resource needed) 
-// d: Seek mentorship 
-// e: Invite mentors
-
-
-
-
-user login
-user create post 
-after uploading the post it will to everyone with same field of interests limit 10 intersets
-auto block user who are spanning 
-
+- user login
+- user create post
+- after uploading the post it will to everyone with same field of interests limit 10 intersets
+- auto block user who are spanning
 
 week 2 and 3 :
+
 - otp verification for login
-- openapi setup
-- notification service 
+- openapi setup -> done
+- notification service -> done
 - chat room for applicants
 - integration testing
-- 
+- notification email after logged out in 24 hours
+
+# Week 3 Requirements
+
+## 1. Notification Mechanism
+
+### Triggered Notifications
+
+1. **Login Notification (Debatable)**
+   - OTP verification during login.
+
+2. **Feed Posted in Field of Interest (Optional)**
+   - Trigger when a post is created in a user’s field of interest.
+   - Can be fetched from the database.
+
+3. **Post/Idea Liked (Optional)**
+   - In-app notification when someone likes an idea or post.
+
+4. **Similar or Related Idea Posted (Optional)**
+   - Notify users if a related idea is posted in the same field of interest.
+   - TODO.
+
+5. **Comments on Idea Feed (Mandatory)**
+   - Notification when someone comments on an idea.
+
+6. **Other Optional Notifications**
+   - To be defined.
+
+### Mentor Notifications
+
+1. Define which notifications should go to mentors.
+2. **Mentor Login / Availability Notification**
+   - Mentors should be able to provide available time slots.
+   - Mentees can connect during those slots.
+   - Group discussion support.
+
+3. Additional mentor-related notifications (TBD).
+
+---
+
+## 2. Messaging Setup
+
+1. **Sending Messages**
+2. **Collaboration Messaging**
+   - Group messaging.
+   - Public groups.
+   - Private groups.
+
+3. **Private Messaging**
+   - With connections.
+   - Limited messaging without connections.
+
+4. **Spam/Ad Filtering**
+   - Message filtering system.
+   - TODO.
+
+---
+
+## 3. Usage Analytics (TODO)
+
+1. **Post Performance**
+   - Split by:
+     - People interested in the topic.
+     - People studying the subject.
+
+2. **Post Reach**
+3. **Profile Views**
+
+---
+
+# Open Feature Questions
+
+1. Should we create a **friend system**?
+2. Should we add **collaboration with mentors** as a feature?
+
+---
+
+# Idea Collaboration Workflow
+
+## Express Interest Flow
+
+### Case 1: Fewer People Than Required
+
+- Student clicks **Express Interest**.
+- Questions pop up.
+- Student submits answers.
+- Idea owner gets notified.
+
+### Case 2: More People Than Required
+
+- Express Interest opens **chat window with idea owner** after answering questions.
+- If applications exceed requirements:
+  - Create a **group for public discussion**.
+
+---
+
+## Drop-off Handling
+
+- If a student leaves the idea:
+  - Idea owner can choose replacements from a **dynamic list of applicants**.
+
+---
+
+# Idea Owner Controls
+
+1. **Pitch Idea**
+   - Short description.
+   - List of screening questions.
+
+2. **Applicant Management**
+   - Accept or reject applicants.
+
+3. **Communication**
+   - Selected users enter a **public discussion/chat room**.
+
+---
+
+# Mentor Integration
+
+## Mentor Selection
+
+- Idea owner can select mentors or invite mentors with email it can be external user.
+
+- Private focused chat group created for:
+  - Mentor
+  - Selected participants.
+
+- Public forum members can be selected and moved to private group.
+
+## Group Control
+
+- Idea owner can:
+  - Move people from public → private forum.
+  - Remove participants.
+
+- If **no mentor is associated**:
+  - All discussions happen in the **public forum**.
+
+- Idea owner decides whether **mentor involvement is required**.
+
+---
+
+# Mentor Rules & Constraints
+
+1. **Mentor Limit per Idea**
+   - Minimum: 1 mentor
+   - Maximum: 5 mentors
+
+2. **Mentor Group Visibility**
+   - Mentors participate **only in the private/focused chat group**.
+   - Mentors are removed from public discussion groups.
+
+3. **Mentor Access**
+   - Mentors can view:
+     - Idea description
+     - Idea details
+     - Focused/private chat group
+
+4. **Mentor Project Limit**
+   - A mentor can be part of multiple ideas.
+   - Maximum **5 ideas simultaneously**.
+
+5. **Mentor Removal**
+   - Idea owner can remove mentor at any time.
+
+---
+
+# Idea Lifecycle Management
+
+1. Idea owner can **delete an idea** if:
+   - There are **no responses for 10 days**.
+
+2. System flow:
+   - Wait 10 days.
+   - Automatically delete inactive idea.
+
+---
+
+# Future Improvements / TODO
+
+- Spam detection for messaging.
+- Post recommendation system for similar ideas.
+- Detailed analytics dashboard.
+- Mentor notification design.

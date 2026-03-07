@@ -5,10 +5,25 @@ import { config } from "dotenv";
 import authRoute from "./routes/auth.route";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
+import promBundle from "express-prom-bundle";
 
 config({ path: "./.env" });
 
 const app = express();
+
+
+const metricsMiddleware = promBundle({
+  includeMethod: true,
+  includePath: true,
+  includeStatusCode: true,
+  includeUp: true,
+  customLabels: { project_name: 'looply', service: 'auth' },
+  promClient: {
+    collectDefaultMetrics: {}
+  }
+});
+
+app.use(metricsMiddleware);
 
 app.use(cors());
 app.use(morgan("dev"));

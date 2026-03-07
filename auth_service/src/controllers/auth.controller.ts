@@ -1,12 +1,14 @@
-
+import { Request, Response } from "express";
 import AsyncHandler from '../utils/AsyncHandler';
 import ApiError from '../utils/ApiError';
 import ApiResponse from '../utils/ApiResponse';
 import { prisma } from '../libs/prisma';
 import bcrypt from "bcrypt";
 import JWT from "jsonwebtoken";
-import axios from "axios";
-import {ForgotPasswordSchema,LoginSchema,RegisterSchema,UpdateProfileSchema} from "../libs/zodClient"
+import { ForgotPasswordSchema, LoginSchema, RegisterSchema, UpdateProfileSchema } from "../libs/zodClient"
+
+import emailQueue from "../libs/email.queue"
+import { redisClient } from '../libs/redis.client';
 
 // logical layer of auth service
 const GenerateToken = async (UserId: number) => {
@@ -52,6 +54,7 @@ const options = {
     sameSite: "strict" as const,
 
 };
+
 const GenerateVerificationLink = (id: number) => {
     const verificationToken = JWT.sign(
         { userId: id },
@@ -63,23 +66,26 @@ const GenerateVerificationLink = (id: number) => {
 
 const RegisterUser = AsyncHandler(async (req, res) => {
     try {
-        const { email, phone, password, fieldOfStudy, fieldOfInterest, dateOfBirth } = req.body;
+        console.log("Registration attempt:", req.body);
+        const { email, phone, password, dateOfBirth } = req.body;
 
-        if (!email || !phone || !password || !fieldOfInterest || !fieldOfStudy || !dateOfBirth) {
-            throw new ApiError(400, "All fields are required");
+        if (!email || !phone || !password || !dateOfBirth) {
+            throw new ApiError(400, "Required fields: email, phone, password, dateOfBirth");
         }
         const { error, data } = RegisterSchema.safeParse(req.body)
         if (error) {
-            throw new ApiError(400, error.message);
+            console.log("Registration validation error:", error.format());
+            throw new ApiError(400, error.issues[0].message);
         }
 
         const existingUser = await prisma.user.findFirst({
             where: {
-                OR: [{ email }, { phone }],
+                OR: [{ email: data.email?.toLowerCase() }, { phone: data.phone }],
                 isDeleted: false,
             },
         });
 
+        // if user exist but isDeleted is true then we can allow user to register with same email or phone number
         if (existingUser) {
             throw new ApiError(409, "User already exists");
         }
@@ -88,32 +94,45 @@ const RegisterUser = AsyncHandler(async (req, res) => {
 
         const user = await prisma.user.create({
             data: {
-                dateOfBirth : new Date(data.dateOfBirth),
+                dateOfBirth: new Date(data.dateOfBirth),
                 fieldOfInterest: data.fieldOfInterest,
                 fieldOfStudy: data.fieldOfStudy,
                 email: data.email?.toLowerCase(),
-                phone : data.phone,
+                phone: data.phone,
                 password: hashedPassword,
+                isVerified:true
             },
         });
         // send email to verify user through email link
         const link = GenerateVerificationLink(user.id);
 
         // issue while sending emailq
-        await axios.post(
-            "http://notification:4000/verification-email",
-            { link, email }
-        ).catch(error => {
-            console.error("Email service error:", error);
-        });
+        const job = await emailQueue.add("verification-email", {
+            link,
+            email: data.email?.toLowerCase()
+        },
+            {
+                jobId: `verification-email-${user.id}`,
+                attempts: 5,
+                backoff: {
+                    type: "exponential",
+                    delay: 2000
+                }
+            }
+        )
 
+        console.log("Email job added:", job.id);
         res.status(201).json(
             new ApiResponse(201, { id: user.id }, "User registered successfully")
         );
 
     } catch (error) {
-        return res.status(500).json(new ApiResponse(500, error, "Something went wrong While Registering User"));
-
+        if (error instanceof ApiError) {
+            return res.status(error.statusCode).json(error);
+        }
+        return res.status(500).json(
+            new ApiResponse(500, null, "Something went wrong")
+        );
     }
 });
 
@@ -149,33 +168,32 @@ const LoginUser = AsyncHandler(async (req, res) => {
             return res.status(404).json(new ApiResponse(404, null, "User not found"));
         }
         // TODO: After email verification only 
-        // if (!user.isVerified) {
-        //     throw new ApiError(403, "Please verify your email first");
-        // }
+        if (!user.isVerified) {
+            throw new ApiError(403, "Please verify your email first");
+        }
 
         const isPasswordMatch = await bcrypt.compare(password, user.password);
 
         if (!isPasswordMatch) {
             return res.status(401).json(new ApiResponse(401, null, "Invalid credentials"));
         }
-        // TODO: send otp to verify user 
 
-        const { accessToken, refreshToken } = await GenerateToken(user.id);
-
-        res.cookie("accessToken", accessToken, {
-            ...options,
-            maxAge: 15 * 60 * 1000, // 15 min
+        // Generate OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Store OTP in Redis with 5 min expiry
+        await redisClient.set(`otp:${user.id}`, otp, {
+            EX: 300 // 5 minutes
         });
 
-        res.cookie("refreshToken", refreshToken, {
-            ...options,
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        // Queue OTP email
+        await emailQueue.add("login-alert", {
+            otp,
+            email: user.email
         });
-
-        const { password: _, ...userWithoutPassword } = user;
 
         return res.status(200).json(
-            new ApiResponse(200, userWithoutPassword, "User logged in successfully")
+            new ApiResponse(200, { userId: user.id }, "OTP sent to your email. Please verify.")
         );
 
     } catch (error) {
@@ -237,7 +255,7 @@ const LogOutUser = AsyncHandler(async (req, res) => {
 const UpdateUserProfile = AsyncHandler(async (req, res) => {
     const userId = req.user.id;
     try {
-        const { error , data} = UpdateProfileSchema.safeParse(req.body)
+        const { error, data } = UpdateProfileSchema.safeParse(req.body)
         if (error) {
             throw new ApiError(400, error.message);
         }
@@ -336,6 +354,50 @@ const GetUser = AsyncHandler(async (req, res) => {
     }
 });
 
+const GetUserById = AsyncHandler(async (req, res) => {
+    try {
+        const targetUserId = req.params.id;
+        const user = await prisma.user.findUnique({
+            where: { id: Number(targetUserId) }
+        });
+        if (!user) {
+             return res.status(404).json(new ApiResponse(404, null, "User Not Found"));
+        }
+        return res.status(200).json(new ApiResponse(200, user, "User Fetched Successfully"))
+    } catch (error) {
+        if (error instanceof ApiError) {
+            return res.status(error.statusCode).json(error);
+        }
+    }
+});
+
+const GetUsersByInterests = AsyncHandler(async (req, res) => {
+    try {
+        const { interests } = req.query;
+        if (!interests) {
+            return res.status(400).json(new ApiResponse(400, null, "Interests are required"));
+        }
+        const interestArray = (interests as string).split(",");
+        const users = await prisma.user.findMany({
+            where: {
+                fieldOfInterest: {
+                    hasSome: interestArray
+                },
+                isDeleted: false
+            },
+            select: {
+                id: true,
+                email: true
+            }
+        });
+        return res.status(200).json(new ApiResponse(200, users, "Users Fetched Successfully"))
+    } catch (error) {
+        if (error instanceof ApiError) {
+            return res.status(error.statusCode).json(error);
+        }
+    }
+});
+
 const LoginWithGoogle = AsyncHandler(async (req, res) => {
     try {
         return res.status(200).json(new ApiResponse(200, "Login With Google Is Under Development"))
@@ -347,11 +409,60 @@ const LoginWithGoogle = AsyncHandler(async (req, res) => {
     }
 });
 
+const VerifyOTP = AsyncHandler(async (req, res) => {
+    const { userId, otp } = req.body;
+    try {
+        if (!userId || !otp) {
+            throw new ApiError(400, "User ID and OTP are required");
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: Number(userId) }
+        });
+
+        if (!user) {
+            throw new ApiError(404, "User Not Found");
+        }
+
+        const storedOtp = await redisClient.get(`otp:${userId}`);
+
+        if (!storedOtp) {
+            throw new ApiError(400, "OTP expired or not found");
+        }
+
+        if (storedOtp !== otp) {
+            throw new ApiError(400, "Invalid OTP");
+        }
+
+        // OTP is valid, delete it from Redis
+        await redisClient.del(`otp:${userId}`);
+
+        const { accessToken, refreshToken } = await GenerateToken(user.id);
+
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", refreshToken, options)
+            .json(
+                new ApiResponse(200, { accessToken, refreshToken }, "OTP verified successfully")
+            );
+
+    } catch (error) {
+        if (error instanceof ApiError) {
+            return res.status(error.statusCode).json(error)
+        }
+        return res.status(500).json(
+            new ApiResponse(500, null, "Something went wrong during OTP verification")
+        );
+    }
+});
+
 
 
 export {
     RegisterUser,
     LoginUser,
+    VerifyOTP,
     LogOutUser,
     UpdateUserProfile,
     ForgotPassword,
@@ -360,4 +471,6 @@ export {
     LoginWithGoogle,
     VerifyUser,
     GetUser,
+    GetUserById,
+    GetUsersByInterests,
 };

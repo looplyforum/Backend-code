@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  // who receives notification
+  userId      Int
+  // who triggered it (very important)
+  actorId     Int?
+  // what type
+  type        NotificationType
+  // references (optional depending on type)
+  postId      Int?
+  applicantId Int?
+  message     String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  @@index([userId, isRead])
+  @@index([postId])
+}
+
+
+enum NotificationType {
+  POST_LIKED
+  POST_COMMENTED
+  NEW_APPLICANT
+  APPLICATION_STATUS_CHANGED
+  NEW_MESSAGE
+  POST_PUBLISHED
+}

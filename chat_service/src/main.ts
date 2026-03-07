@@ -3,10 +3,9 @@ import cors from "cors"
 import morgan from "morgan"
 import { config } from "dotenv"
 import rateLimit from "express-rate-limit"
-import postRoute from "./routes/post.route"
-import ApplicationRoute from "./routes/application.route"
 import cookieParser from "cookie-parser";
 import { verifyToken } from "./middlewares/middleware"
+import { initializeSocket } from "./utils/socket"
 
 config({
   path: "./.env"
@@ -15,6 +14,21 @@ config({
 
 const PORT = process.env.PORT || 4000
 const app = express()
+
+import promBundle from "express-prom-bundle";
+
+const metricsMiddleware = promBundle({
+  includeMethod: true,
+  includePath: true,
+  includeStatusCode: true,
+  includeUp: true,
+  customLabels: { project_name: 'looply', service: 'chat' },
+  promClient: {
+    collectDefaultMetrics: {}
+  }
+});
+
+app.use(metricsMiddleware);
 
 app.use(cors())
 app.use(morgan("dev"))
@@ -31,11 +45,18 @@ app.use(
 
 app.use(verifyToken);
 
-app.use('/application',ApplicationRoute)
+app.get("/health", (_, res) => {
+  return res.status(200).json({ status: "ok" });
+});
 
-app.use("/", postRoute)
+import chatRoutes from "./routes/chat.routes";
+import messageRoutes from "./routes/message.routes";
 
+app.use("/chat", chatRoutes);
+app.use("/message", messageRoutes);
 
-app.listen(PORT, () => {
-  console.log(`Post service is running on port ${PORT}`)
+const server = initializeSocket(app);
+
+server.listen(PORT, () => {
+  console.log(`Chat service is running on port ${PORT}`)
 })
